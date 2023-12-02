@@ -35,3 +35,5 @@ Collate:
     '6-featscreen-class.R'
     '7-screen-function.R'
     '8-filter-functions.R'
+URL: https://github.com/alebarberis/featscreen
+BugReports: https://github.com/alebarberis/featscreen/issues
