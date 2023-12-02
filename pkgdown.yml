@@ -1,0 +1,12 @@
+pandoc: 2.19.2
+pkgdown: 2.0.7
+pkgdown_sha: ~
+articles:
+  featscreen: featscreen.html
+  supervised: supervised.html
+  unsupervised: unsupervised.html
+last_built: 2023-12-02T23:13Z
+urls:
+  reference: https://alebarberis.github.io/featscreen/reference
+  article: https://alebarberis.github.io/featscreen/articles
+
