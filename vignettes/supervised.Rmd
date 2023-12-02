@@ -1,0 +1,503 @@
+---
+title: "Supervised screening methods"
+output: rmarkdown::html_vignette
+bibliography: references.bib
+vignette: >
+  %\VignetteIndexEntry{Supervised screening methods}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+## Introduction
+In the realm of data analysis, supervised feature screening emerges as a pivotal 
+process, guiding the selection of relevant features to enhance predictive 
+modeling and classification accuracy. 
+
+**featscreen** empowers analysts and data scientists by providing a comprehensive 
+suite of ready-to-use functions tailored for supervised feature screening. 
+
+From traditional correlation-based methods to sophisticated statistical 
+approaches such as Cox Proportional-Hazard models for survival data, 
+**featscreen** aims to bridge the gap between complex methodologies and 
+user-friendly implementation.
+
+In this article we explore the different supervised feature screening methods
+supported by **featscreen**.
+
+## Setup
+Firstly, we load `featscreen` and other needed packages:
+
+```{r setup}
+library(featscreen)
+```
+
+## Seed
+Now we want to set a seed for the random number generation (RNG). In fact, 
+different R sessions have different seeds created from current time and process 
+ID by default, and consequently different simulation results. By fixing a seed 
+we ensure we will be able to reproduce the results of this vignette. 
+We can specify a seed by calling `?set.seed`.
+
+
+```{r set_seed}
+#Set a seed for RNG
+set.seed(
+  #A seed
+  seed = 5381L,                   #a randomly chosen integer value
+  #The kind of RNG to use
+  kind = "Mersenne-Twister",      #we make explicit the current R default value
+  #The kind of Normal generation
+  normal.kind = "Inversion"       #we make explicit the current R default value
+)
+```
+
+
+## Screening Methods
+To view the list of currently supported supervised screening methods, use the 
+`?listAvailableScreeningMethods` function with the `x` parameter set to `supervised`:
+
+
+```{r list_supervised_screening_methods}
+#list screening methods
+screening.methods = listAvailableScreeningMethods(x = 'supervised')
+
+#print in table
+knitr::kable(x = screening.methods, align = 'rc')
+```
+
+
+### Correlation
+Correlation analysis plays a fundamental role in understanding relationships between variables in the context of supervised feature screening. It provides a quantitative measure of the strength and direction of associations, helping identify features that may contribute significantly to predictive models. 
+
+**featscreen** supports various correlation methods, each catering to different data characteristics and analytical needs.
+
+#### Pearson's Correlation
+**Pearson's correlation** is a widely-used measure that assesses linear relationships between features and the target variable. Represented by the correlation coefficient *r*, this method quantifies the extent to which two variables change together. The coefficient ranges from -1 to 1, where -1 indicates a perfect negative linear relationship, 1 denotes a perfect positive linear relationship, and 0 signifies no linear correlation. Pearson's correlation is sensitive to outliers and assumes a linear relationship between variables.
+
+Pearson's correlation is computed in **featscreen** by calling the function `?rowPearsonCor`. 
+From the documentation, we can see that this is a wrapper function that 
+internally calls `?row_cor_pearson` from the `matrixTests` package. 
+
+Let's explore a practical example to illustrate the application of Pearson's 
+correlation.
+
+```{r supervised_screening_pearson}
+#Data
+x = matrix(rnorm(10 * 20), 10, 20)
+y = rnorm(20)
+
+#Compute
+rowPearsonCor(x = x, y = y)
+```
+
+
+#### Spearman's Correlation
+**Spearman's correlation** is a non-parametric measure that evaluates monotonic relationships between variables. By ranking the data values and assessing the correlation of the ranks, Spearman's correlation provides a robust alternative to Pearson's correlation, especially in the presence of outliers or non-linear patterns. The resulting coefficient, denoted by *rho*, ranges between -1 and 1, where extreme values indicate strong monotonic relationships.
+
+
+In **featscreen**, Spearman's correlation is computed by calling the function `?rowSpearmanCor`. 
+From the documentation, we can see that this is a wrapper function that 
+internally calls `?cor.test` from the `stats` package. 
+
+Let see an example.
+
+```{r supervised_screening_spearman}
+#Data
+x = matrix(rnorm(10 * 20), 10, 20)
+y = rnorm(20)
+
+#Compute
+rowSpearmanCor(x = x, y = y)
+```
+
+
+#### Kendall's Correlation
+**Kendall's correlation** is another non-parametric method for assessing correlation. Similar to Spearman's correlation, it is based on the ranking of data. It measures the similarity in the ordering of data pairs between two variables, making it suitable for ordinal data and less sensitive to outliers. Kendall's coefficient, denoted by *tau*, ranges from -1 to 1, with negative values indicating a negative association, positive values signifying a positive association, and 0 representing no association.
+
+
+In **featscreen**, Kendall's correlation is computed by calling the function `?rowKendallCor`. 
+From the documentation, we can see that this is a wrapper function that 
+internally calls `?cor.test` from the `stats` package. 
+
+Let see an example.
+
+```{r supervised_screening_kendall}
+#Data
+x = matrix(rnorm(10 * 20), 10, 20)
+y = rnorm(20)
+
+#Compute
+rowKendallCor(x = x, y = y)
+```
+
+
+### Two-Sample Tests
+Two-sample tests are indispensable tools in supervised feature screening, offering insights into the differences between two groups of data. 
+
+**featscreen** incorporates a range of two-sample tests, each catering to diverse scenarios and assumptions. Whether examining mean differences with parametric tests or assessing variations in medians with non-parametric tests, these methods play a pivotal role in uncovering significant distinctions between groups, contributing to the identification of influential features within the feature space.
+
+
+#### Two-Sample Student's t-Test
+The **Two-Sample Student's t-Test** is a parametric method used to assess whether the means of two groups are significantly different. It is applicable when the data follow a normal distribution. The t-test results in a t-statistic and a p-value, helping analysts determine the statistical significance of observed differences.
+
+Two-sample t-tests can be further divided into:
+
+1. **Unpaired** two-samples t-tests
+2. **Paired** two-samples t-tests
+
+##### Unpaired Samples
+T-tests provide invaluable insights into differences between two independent groups. 
+
+**featscreen** supports unpaired two-sample t-tests, offering flexibility to handle scenarios with both equal and unequal variances. This class of t-tests is particularly applicable when comparing means between two groups where each observation in one group is independent of the other.
+
+###### Equal Variance T-Test
+The **Equal Variance T-Test**, often referred to as the traditional or pooled t-test, assumes that the variances of the two groups being compared are equal. This test is suitable when the data in both groups follow a normal distribution and exhibit homogeneity of variances. 
+
+**featscreen** supports the Equal Variance T-Test through the `?rowEqualVarT` function.
+
+From the documentation, we can see that this is a wrapper function that 
+internally calls `?row_t_equalvar` from the `matrixTests` package. 
+
+```{r supervised_screening_unpaired_pooled_t_test}
+#Data
+x = matrix(rnorm(10 * 20), 10, 20)
+# Assuming 'group1' and 'group2' are indicating independent measurements
+g = c(rep('group1',10),rep('group2',10))
+
+#Compute
+rowEqualVarT(x = x, g = g)
+```
+
+
+###### Unequal Variance T-Test
+The **Unequal Variance T-Test**, also known as *Welch's T-Test*, is employed when the assumption of equal variances is not met. This test is robust in scenarios where variances in the two groups differ. 
+
+The Unequal Variance T-Test is available in **featscreen** through the `?rowUnequalVarT` function.
+
+From the documentation, we can see that this is a wrapper function that 
+internally calls `?row_t_welch` from the `matrixTests` package. 
+
+```{r supervised_screening_unpaired_welch_t_test}
+#Data
+x = cbind(
+  matrix(rnorm(n = 10 * 10, mean = 1, sd = 2), 10, 10),
+  matrix(rnorm(n = 10 * 10, mean = 3, sd = 4), 10, 10)
+)
+# Assuming 'group1' and 'group2' are indicating independent measurements
+g = c(rep('group1',10),rep('group2',10))
+
+#Compute
+rowUnequalVarT(x = x, g = g)
+```
+
+
+##### Paired Samples
+The **paired t-test** variant is available for situations where measurements are paired, 
+such as repeated measurements on the same subjects or matched pairs of subjects.
+This variant of the t-test assesses whether the mean difference between paired observations is statistically different from zero.
+
+The paired t-test is particularly useful in experimental designs where each subject is subjected to two different conditions, treatments, or time points, and the goal is to determine whether there is a significant change within each pair. For instance, in clinical trials, the paired t-test may be applied to assess the efficacy of a treatment by comparing measurements taken before and after the treatment for the same group of individuals.
+
+
+In **featscreen**, a paired t-test is computed by calling the function `?rowPairedT`. 
+From the documentation, we can see that this is a wrapper function that 
+internally calls `?row_t_paired` from the `matrixTests` package. 
+
+Let see an example.
+
+```{r supervised_screening_paired_t_test}
+#Data
+x = matrix(rnorm(10 * 20), 10, 20)
+# Assuming 'before' and 'after' are indicating paired measurements
+g = c(rep('before',10),rep('after',10))
+
+#Compute
+rowPairedT(x = x, g = g)
+```
+
+In this example, the paired t-test is applied to assess whether there is a significant difference in measurements taken before and after a treatment or intervention. Users can adapt this approach to various domains, providing a powerful means of exploring paired data within the supervised feature screening process.
+
+
+
+
+#### Two-Sample Wilcoxon's Signed-Rank Test
+The **Two-Sample Wilcoxon's Signed-Rank Test** is a non-parametric alternative to the t-test, suitable for situations where the assumption of normality is violated. This test assesses whether the distribution of differences between paired observations differs significantly from zero. It is particularly robust against outliers and variations in the shape of the distribution, making it a valuable option for scenarios with non-normally distributed data.
+
+In **featscreen**, the wilcoxon signed-rank test is computed by calling the function `?rowPairedWilcoxonT`. 
+
+From the documentation, we can see that this is a wrapper function that 
+internally calls `?row_wilcoxon_paired` from the `matrixTests` package.
+
+
+```{r supervised_screening_wilcoxon_signed_rank_test}
+#Data
+x = matrix(rnorm(10 * 20), 10, 20)
+# Assuming 'before' and 'after' are indicating paired measurements
+g = c(rep('before',10),rep('after',10))
+
+#Compute
+rowWilcoxonT(x = x, g = g)
+```
+
+#### Two-Sample Mann-Whitney U-Test
+The **Two-Sample Mann-Whitney U-Test** (also known as *Wilcoxon Rank-Sum Test*) extends the Wilcoxon test to independent samples, allowing analysts to evaluate whether the distributions of two groups differ significantly. This non-parametric test is suitable for situations where assumptions of normality are not met, providing an effective tool for feature screening in diverse datasets. The Mann-Whitney U-Test results in a U-statistic and a p-value, aiding in the determination of statistical significance between groups.
+
+In **featscreen**, the Wilcoxon rank-sum test is computed by calling the function `?rowWilcoxonT`. 
+
+From the documentation, we can see that this is a wrapper function that 
+internally calls `?row_wilcoxon_twosample` from the `matrixTests` package.
+
+```{r supervised_screening_wilcoxon_rank_sum_test}
+#Data
+x = matrix(rnorm(10 * 20), 10, 20)
+# Assuming 'before' and 'after' are indicating independent measurements
+g = c(rep('before',10),rep('after',10))
+
+#Compute
+rowWilcoxonT(x = x, g = g)
+```
+
+
+### Comparing Multiple Groups
+Comparing multiple groups is a crucial aspect of supervised feature screening, allowing analysts to discern variations in feature behavior across different categorical or experimental conditions. 
+
+**featscreen** integrates diverse statistical methods tailored for such comparisons, accommodating scenarios with varying assumptions and data characteristics. Whether exploring mean differences with ANOVA, assessing median disparities with non-parametric tests, or examining categorical associations with the Chi-Square Test, **featscreen** provides a comprehensive suite of tools to unravel nuanced patterns within the feature space.
+
+
+#### One-way Analysis of Variance F-Test
+The One-way Analysis of Variance (ANOVA) F-Test stands as a fundamental parametric method designed for comparing means across two or more independent groups. This statistical test addresses the question of whether there are significant differences in the means of distinct groups, making it a versatile tool for analyzing experimental data with multiple categorical conditions or levels. ANOVA relies on the assumption of normality and homogeneity of variances among the groups.
+
+The F-Test results in an F-statistic and a p-value, enabling analysts to make informed decisions about the statistical significance of observed differences in means.
+
+**featscreen** supports ANOVA with equal or unequal variance.
+
+
+##### Equal Variance ANOVA
+The Equal Variance ANOVA is used to assess mean differences among multiple independent groups. This variant of ANOVA, also known as the traditional or pooled ANOVA, assumes homogeneity of variances and normality within each group. 
+
+In **featscreen**, the pooled one-way analysis of variance test is computed by calling the function `?rowEqualVarOneWayAnova`. 
+
+From the documentation, we can see that this is a wrapper function that 
+internally calls `?row_oneway_equalvar` from the `matrixTests` package.
+
+```{r supervised_screening_pooled_anova}
+#Data
+x = matrix(rnorm(10 * 20), 10, 20)
+# Assuming 'before' and 'after' are indicating independent measurements
+g = c(rep('before',10),rep('after',10))
+
+#Compute
+rowEqualVarOneWayAnova(x = x, g = g)
+```
+
+
+##### Unequal Variance ANOVA
+The Unequal Variance ANOVA, also known as Welch's ANOVA, accommodates scenarios where the variances among groups differ, offering a robust approach when homogeneity of variances cannot be assumed. 
+
+In **featscreen**, the one-way analysis of variance test with Welch correction is computed by calling the function `?rowUnequalVarOneWayAnova`. 
+
+From the documentation, we can see that this is a wrapper function that 
+internally calls `?row_oneway_welch` from the `matrixTests` package.
+
+```{r supervised_screening_welch_anova}
+#Data
+x = cbind(
+  matrix(rnorm(n = 10 * 10, mean = 1, sd = 2), 10, 10),
+  matrix(rnorm(n = 10 * 10, mean = 3, sd = 4), 10, 10)
+)
+# Assuming 'before' and 'after' are indicating independent measurements
+g = c(rep('before',10),rep('after',10))
+
+#Compute
+rowUnequalVarOneWayAnova(x = x, g = g)
+```
+
+
+#### Kruskal-Wallis Test
+A non-parametric alternative to ANOVA, the Kruskal-Wallis test is applied when the assumption of normality is not met or when analyzing ordinal data.
+
+This test evaluates whether the distributions of two or more independent groups differ significantly. The Kruskal-Wallis Test results in a chi-square statistic and a p-value, offering a robust approach for scenarios where parametric assumptions may be violated.
+
+In **featscreen**, the Kruskal-Wallis H-test is computed by calling the function `?rowKruskalWallis`. 
+
+
+From the documentation, we can see that this is a wrapper function that 
+internally calls `?row_kruskalwallis` from the `matrixTests` package.
+
+
+```{r supervised_screening_kruskal_wallis}
+#Data
+x = cbind(
+  matrix(rnorm(n = 10 * 10, mean = 1, sd = 2), 10, 10),
+  matrix(rnorm(n = 10 * 10, mean = 3, sd = 4), 10, 10)
+)
+# Assuming 'before' and 'after' are indicating independent measurements
+g = c(rep('before',10),rep('after',10))
+
+#Compute
+rowUnequalVarOneWayAnova(x = x, g = g)
+```
+
+#### Chi-Square Test
+Chi-Square Test investigates associations between categorical variables, 
+providing a statistical basis for feature selection in contingency tables.
+
+
+In **featscreen**, the Pearson's Chi-squared test is computed by calling the function `?rowPearsonChiSq`. 
+
+From the documentation, we can see that this is a wrapper function that 
+internally calls `?chisq.test` from the `stats` package.
+
+```{r supervised_screening_chisq}
+#Data
+## Matrix with 2 features: 'mutation status' and 'sex'
+x = rbind(
+   matrix(sample(c("mut", "wt"),30,TRUE), 1, 30),
+   matrix(sample(c("m", "f")   ,30,TRUE), 1, 30)
+)
+g = sample(c("a","b","c"), 30, replace = TRUE)
+
+#Compute
+rowPearsonChiSq(x = x, g = g, simulate.p.value = TRUE)
+```
+
+The example showcases the application of the Chi-Square Test using a contingency table with two categorical features: 'mutation status' and 'sex'. The test results include a Chi-Square statistic and a p-value, providing analysts with insights into the significance of associations between these categorical variables across different groups. 
+
+
+### Survival Data
+Survival data analysis occupies a distinctive realm within feature screening, focusing on time-to-event outcomes. In many fields, including medical research and epidemiology, understanding the duration until a particular event occurs is crucial. 
+
+#### Cox PH Regression Coefficient z-test
+Survival analysis often employs Cox Proportional-Hazard (PH) models, a powerful statistical approach for understanding the impact of covariates on the time to an event. 
+
+In **featscreen**, the Cox PH Regression Coefficient Z-Test is used for assessing the significance of regression coefficients in the context of survival data.
+
+Within **featscreen**, the Cox Proportional-Hazard regression coefficient Z-Test is executed through the `?rowCoxPH` function. From the documentation, we can see that this this function serves as a wrapper, internally calling `?coxph` from the `survival` package.
+
+
+```{r supervised_screening_coxph}
+#Data
+x = matrix(rnorm(10 * 7), 10, 7)
+y = data.frame(
+   time = c(4,3,1,1,2,2,3),
+   status = c(1,1,1,0,1,1,0)
+)
+
+#Compute
+rowCoxPH(x = x, y = y)
+```
+
+The example above showcases the application of the Cox PH Regression Coefficient Z-Test in **featscreen**, using simulated survival data. The results include z-statistics and p-values, aiding analysts in discerning the significance of individual features in influencing time-to-event outcomes. 
+
+
+### Bio-statistical Functions
+In the pursuit of understanding complex biological data, there have been continuous efforts to refine statistical techniques, aiming to better model the intricacies inherent in bioinformatic datasets. 
+
+These bio-statistical functions can play a crucial role in feature screening.
+
+#### Empirical Bayes Moderated Tests
+These tests offer a robust approach to detecting differentially expressed 
+features in gene expression data arising from microarray or RNA-seq technologies.
+
+Particularly, here we take advantage of the `limma` R package. Renowned for its effectiveness in gene expression analysis, `limma` employs linear modeling to fit a model to the systematic part of the data, paving the way for robust statistical inference.
+
+The basic statistic used for significance analysis is the moderated t-statistic, which has the same interpretation as an ordinary t-statistic except that the standard errors have been moderated across genes, i.e., squeezed towards a common value, using a simple Bayesian model. As reported in the [limma user guide](https://bioconductor.org/packages/devel/bioc/vignettes/limma/inst/doc/usersguide.pdf):
+
+> Moderated t-statistics lead to p-values in the same way that ordinary t-statistics do except that the degrees of freedom are increased, reflecting the greater reliability associated with the smoothed standard errors. The effectiveness of the moderated t approach has been demonstrated on test data sets for which the differential expression status of each probe is known.
+
+In **featscreen**, the empirical Bayes moderated t-statistics are computed by calling the function `?rowEBayesStatistics`. 
+
+From the documentation, we can see that this is a wrapper function that 
+internally calls different functions from the `limma` package:
+
+1. `voom`: (optional) transform count data for linear modelling.
+2. `lmFit`: linear model fitting for each feature.
+3. `contrasts.fit`: compute coefficients and standard errors for a given set of contrasts.
+4. `eBayes`: compute moderated moderated t-/F-statistic.
+5. `topTable`: summarise the linear model fit.
+
+
+```{r supervised_screening_limma}
+#Define row/col size
+nr = 20
+nc = 20
+
+#Data
+x = matrix(
+  data = stats::rnorm(n = nr*nc),
+  nrow = nr,
+  ncol = nc,
+  dimnames = list(
+    paste0("g",seq(nr)),
+    paste0("S",seq(nc))
+  )
+)
+#Categorical output vector (multinomial)
+y = sample(x = c("I","II","III"),size=nc,replace=TRUE)
+names(y) = paste0("S",seq(nc))
+
+#Compute
+rowEBayesStatistics(x=x,y=y)
+```
+
+#### SAM Permutation Test
+Significance Analysis of Microarrays (SAM) permutation test is a powerful tool 
+for identifying features with significant expression changes in microarray data.
+It was proposed by Tusher, Tibshirani and Chu [@Tusher2001]. 
+Here we take advantage of the `samr` R package. 
+
+As reported from the [SAM user guide](https://tibshirani.su.domains/SAM/sam.pdf):
+
+> The input to SAM is gene expression measurements from a set of microarray experiments, as
+well as a response variable from each experiment. The response variable may be a grouping like
+untreated, treated (either unpaired or paired), a multiclass grouping (like breast cancer, lymphoma,
+colon cancer), a quantitative variable (like blood pressure) or a possibly censored survival time.
+SAM computes a statistic d~i~ for each gene *i*, measuring the strength of the relationship between
+gene expression and the response variable. It uses repeated permutations of the data to determine
+if the expression of any genes are significantly related to the response. The cutoff for significance
+is determined by a tuning parameter **delta**, chosen by the user based on the false positive rate. One
+can also choose a **fold change** parameter, to ensure that called genes change at least a pre-specified
+amount. 
+
+In **featscreen**, the SAM permutation test is computed by calling the function `?rowSamStatistics`. 
+
+From the documentation, we can see that this is a wrapper function that 
+internally calls three functions from the `samr` package:
+
+1. `samr`: correlate each feature with outcome variable.
+2. `samr.compute.delta.table`: compute thresholds, cutpoints, and false discovery rates for SAM analysis.
+3. `samr.compute.siggenes.table`: compute SAM statistics and significance.
+
+```{r supervised_screening_samr}
+#Define row/col size
+nr = 20
+nc = 20
+
+#Data
+x = matrix(
+  data = stats::rnorm(n = nr*nc),
+  nrow = nr,
+  ncol = nc,
+  dimnames = list(
+    paste0("g",seq(nr)),
+    paste0("S",seq(nc))
+  )
+)
+#Categorical output vector (multinomial)
+y = sample(x = c(1,2,3),size=nc,replace=TRUE)
+names(y) = paste0("S",seq(nc))
+
+#Compute
+rowSamStatistics(x=x,y=y)
+```
+
+
+## References

@@ -1,0 +1,37 @@
+Package: featscreen
+Type: Package
+Title: Unsupervised and Supervised Feature Screening
+Version: 0.0.0.9000
+Authors@R: c(
+  person(given="Alessandro", family="Barberis", email="abarberis.sw@gmail.com", role=c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-6718-855X"))
+  )
+Maintainer: Alessandro Barberis <abarberis.sw@gmail.com>
+Description: Feature selection using supervised and unsupervised variable 
+    screening.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown=TRUE)
+Imports: 
+    limma,
+    matrixStats,
+    matrixTests,
+    samr,
+    stats,
+    survival
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
+RoxygenNote: 7.2.3.9000
+Collate: 
+    '0-utility-functions.R'
+    '1-log-functions.R'
+    '2-stats-functions.R'
+    '3-stats-test-functions.R'
+    '4-biostats-test-functions.R'
+    '5-selection-functions.R'
+    '6-featscreen-class.R'
+    '7-screen-function.R'
+    '8-filter-functions.R'

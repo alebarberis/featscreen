@@ -1,0 +1,422 @@
+---
+title: "An introduction to `featscreen`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{An introduction to `featscreen`}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+**featscreen** is a versatile and user-friendly package designed to simplify the 
+process of supervised and unsupervised feature screening in R.
+
+The cornerstone of **featscreen** is the `?screen` function, that can be used 
+to effortlessly perform the three screening steps:
+
+1. **Computation of the Statistic**: Harness the power of various statistical 
+techniques to compute relevant measures, allowing you to gain insights into the 
+relationships and characteristics of your features.
+2. **Aggregation of Results for Multi-Response Data**: In scenarios where your 
+data involves multiple responses, the results from step 1 are aggregated before 
+selection.
+3. **Selection of Features to Keep**: Features are retained based on the screening 
+results. The package offers a range of common options for feature selection.
+
+Ready to dive in? Let's walk through the steps of using `featscreen` to perform 
+your first feature screening analysis.
+
+## Setup
+Firstly, we load `featscreen` and other needed packages:
+
+```{r setup}
+library(featscreen)
+```
+
+## Seed
+Now we want to set a seed for the random number generation (RNG). In fact, 
+different R sessions have different seeds created from current time and process 
+ID by default, and consequently different simulation results. By fixing a seed 
+we ensure we will be able to reproduce the results of this vignette. 
+We can specify a seed by calling `?set.seed`.
+
+
+```{r set_seed}
+#Set a seed for RNG
+set.seed(
+  #A seed
+  seed = 5381L,                   #a randomly chosen integer value
+  #The kind of RNG to use
+  kind = "Mersenne-Twister",      #we make explicit the current R default value
+  #The kind of Normal generation
+  normal.kind = "Inversion"       #we make explicit the current R default value
+)
+```
+
+## 1. Computation of the Statistic
+The initial step in the feature screening process involves the computation of a 
+statistic that will be utilized for subsequent feature selection.
+ 
+**featscreen** offers a diverse range of both supervised and unsupervised 
+screening techniques.
+
+You can explore the currently supported screening methods by calling the 
+`?listAvailableScreeningMethods` function. This function returns a table with at 
+least two columns:
+
+* `id`: The unique identifier for each screening method, used in function calls.
+* `name`: The name of the screening method.
+
+### Screening Methods
+To view the list of currently supported supervised screening methods, use the 
+`?listAvailableScreeningMethods` function with the `x` parameter set to `supervised`:
+
+
+```{r list_supervised_screening_methods}
+#list screening methods
+screening.methods = listAvailableScreeningMethods(x = 'supervised')
+
+#print in table
+knitr::kable(x = screening.methods, align = 'rc')
+```
+
+
+Similarly, we can use the `x` parameter to show the unsupervised methods:
+
+```{r list_unsupervised_screening_methods}
+#list screening methods
+screening.methods = listAvailableScreeningMethods(x = 'unsupervised')
+
+#print in table
+knitr::kable(x = screening.methods, align = 'rc')
+```
+
+
+
+### Screening Functions
+The name of the screening functions can be retrieved by calling `?listAvailableScreeningFunctions`.
+
+Again, you can use the `x` parameter to show only the supervised methods:
+
+```{r list_supervised_screening_functions}
+#list screening functions
+screening.functions = listAvailableScreeningFunctions(x = 'supervised')
+
+#print in table
+knitr::kable(x = screening.functions, align = 'rc')
+```
+
+
+Similarly, you can use the `x` parameter to show only the unsupervised methods:
+
+```{r list_unsupervised_screening_functions}
+#list screening functions
+screening.functions = listAvailableScreeningFunctions(x = 'unsupervised')
+
+#print in table
+knitr::kable(x = screening.functions, align = 'rc')
+```
+
+
+
+Each function is documented. To learn more about a specific method it is possible to use
+the `?` operator. For example, let's check the function `?rowPearsonCor`.
+
+```{r supervised_screening_function_documentation}
+#See documentation
+?rowPearsonCor
+```
+
+
+From the documentation, we can see that this is a wrapper function that 
+internally calls `?row_cor_pearson` from the `matrixTests` package. 
+
+It accepts four arguments in input:
+
+* `x`: A matrix or a data frame.
+* `y`: A numerical vector.
+* `alternative`: The alternative hypothesis for each row of `x`.
+* `conf.level`: The confidence levels of the intervals.
+
+
+Let's compute the Pearson's correlation for each row of a matrix by using this 
+function:
+
+```{r example1}
+#Data
+x = matrix(rnorm(10 * 20), 10, 20)
+y = rnorm(20)
+
+#Compute
+rowPearsonCor(x = x, y = y)
+```
+
+
+The function returns a list with two elements:
+
+* `statistic`: A vector containing the values of the correlation coefficient t-test statistic.
+* `significance`: A vector containing the p-values of the correlation coefficient t-test.
+
+## 2. Aggregation of Results
+**featscreen** provides a straightforward function named `?multiresponse` for the 
+aggregation of results from multi-response data.
+
+Let's explore this function:
+
+```{r multiresponse_aggregation_function_documentation}
+#See documentation
+?multiresponse
+```
+
+
+From the documentation, we learn that the function accepts three arguments:
+
+* `x`: A matrix containing the values to combine.
+* `multi`: The aggregation strategy to use. There are five available options:
+    + `max`: Keep the maximum value across responses.
+    + `min`: Keep the minimum value across responses.
+    + `avg`: Average the values.
+    + `sum`: Sum up the values.
+    + `idx`: Return the column indicated by the argument `idx`.
+* `idx`: An optional integer value or string indicating the column of `x` to keep.
+
+
+## 3. Selection of Features
+The final step in the feature screening process involves the selection of 
+features to retain based on the computed statistics.
+
+### Selection Methods
+The name of the selection methods can be retrieved by calling `?listAvailableSelectionMethods`:
+
+```{r list_selection_methods}
+#list selection methods
+selection.methods = listAvailableSelectionMethods()
+
+#print in table
+knitr::kable(x = selection.methods, align = 'rc')
+```
+
+**featscreen** provides five selection strategies:
+
+1. `cutoff`: Features are selected by a cutoff on their values.
+2. `rank`: Features are selected based on their ranking.
+3. `percentile`: Features are selected by a percentile of the highest values.
+4. `fpr`: Features are selected by a cutoff on the false positive rates.
+5. `fdr`: Features are selected by a cutoff on the false discovery rates.
+
+
+### Selection Functions
+The name of the selection functions can be retrieved by calling `?listAvailableSelectionFunctions`.
+
+```{r list_selection_functions}
+#list selection functions
+selection.functions = listAvailableSelectionFunctions()
+
+#print in table
+knitr::kable(x = selection.functions, align = 'rc')
+```
+
+
+Each function is documented. To learn more about a specific method it is possible to use
+the `?` operator. For example, let's check the function 
+`?selectByCutoff`.
+
+```{r selection_function_documentation}
+#See documentation
+?selectByCutoff
+```
+
+From the documentation, we can see that the function accepts three arguments in 
+input:
+
+* `x`: A numerical vector.
+* `cutoff`: The cutoff to use in the selection.
+* `operator`: A string indicating the relational operator to use.
+
+Let's select elements of a vector by using this function.
+
+```{r example2}
+#Select by Cutoff
+selectByCutoff(
+  x = seq_len(10),
+  cutoff = 3,
+  operator = "<"
+)
+```
+
+As reported in the documentation, the function returns a logical vector of the 
+same length as the input vector, indicating which elements to retain.
+
+
+## `screen` Function
+Rather than using individual screening functions, you can streamline the process 
+by using the `?screen` function. This function provides a unified interface for 
+various screening methods, incorporating all three steps of the screening process.
+
+```{r screen_function_documentation, eval=FALSE, include=FALSE}
+#See documentation
+?screen
+```
+
+### Parameters
+The parameters in input are:
+
+* `x`: Either a matrix or a data frame where rows represent features, and columns represent observations.
+* `y`: Numeric vector of data values.
+* `g`: (Optional) Vector specifying the group for corresponding elements of `x`.
+* `method`: One of the supported screening techniques. See `?listAvailableScreeningMethods`.
+* `...`: Additional arguments to the screening function.
+* `multi`: Strategy to adopt in case of multi-response data.
+* `idx`: (Optional) Integer value or character string indicating the column of `x` to keep.
+* `select.by`: The selection method to use.
+* `select.args`: A named list containing the arguments to be passed to the selecting function.
+
+### Output
+The function returns an object of class `?featscreen`, representing a set of
+screened features.
+
+## `featscreen` S3 Class
+The `featscreen` class represents a set of screened features. 
+
+A `featscreen` object is a `list` consisting of eight elements:
+
+* `method`: The id of the used screening method.
+* `multi`: The id of the used multi-response aggregation method.
+* `selection`: The id of the used selection method.
+* `summary`: A textual summary of the screening.
+* `n`: The dimension of the feature space.
+* `features`: The feature names.
+* `keep`: The features to keep.
+* `ranks`: The feature ranks.
+
+Functions to facilitate access to the data stored in a `featscreen` object are
+available:
+
+* `?getScreeningMethodId`: Returns the screening method id.
+* `?getMultiresponseAggregationMethodId`: Returns the multi-response aggregation method id.
+* `?getSelectionMethodId`: Returns the selection method id.
+* `?getSummary`: Returns the textual summary of the screening.
+* `?getFeatureDimensionality`: Returns the dimension of the feature space.
+* `?getFeatureNames`: Returns the feature names.
+* `?getScreenedFeatures`: Returns the features to keep.
+* `?getFeatureRanks`: Returns the feature ranks.
+
+Another useful function is `print`:
+
+* `?print.featscreen`: Print a summary of the `featscreen` object.
+
+## Feature Screening
+Now let's use the `?screen` function to subset a feature space by using an
+unsupervised screening method.
+
+First, let's create the data.
+
+```{r setup_strata}
+#Define row/col size
+nr = 100
+nc = 20
+
+#Data
+x = matrix(
+  data = sample(x = c(1,2), size = nr*nc, replace = TRUE),
+  nrow = nr,
+  ncol = nc,
+  dimnames = list(
+    paste0("feature",seq(nr)),
+    paste0("S",seq(nc))
+  )
+)
+
+#Define grouping variable
+g = c(rep("a", nc/2), rep("b", nc/2))
+
+#Force 1st feature to have 40% of missing values
+x[1,seq(nc*0.4)] = NA
+```
+
+A common unsupervised screening step is to remove a feature if the number of 
+missing elements exceeds a defined cutoff. 
+
+### 1. Select Screening Function
+If we look at the table returned by `?listAvailableScreeningMethods`, we can see 
+that the `id` for feature selection by missing value ratio is `missing.value`. 
+
+Looking at the table returned by `?listAvailableScreeningFunctions`, we can see
+that the function corresponding to `missing.value` is `?rowMissingValueRatio`.
+
+From the documentation, we can see that the function accepts two arguments in 
+input:
+
+* `x`: matrix or data frame, where rows are features and columns are observations
+* `g`: optional grouping vector or factor
+
+If `g` is provided, this function returns a matrix with missing-value ratios for
+each group as column vectors.
+
+Let's start building our call.
+
+We can use `missing.value` as the `method` argument in `?screen`. 
+
+To provide an example of multi-response aggregation, we will also provide the
+`g` argument through the ellipsis (i.e., the three dots).
+
+### 2. Choose aggregation strategy
+As aggregation strategy we choose to keep the maximum value across responses. 
+We can do this by providing `max` as the `multi` argument in `?screen`.
+
+
+### 3. Select Selection Function
+Now that we have defined the screening function and the aggregation strategy, we
+need to identify the selection method.
+
+Here we use again the function `?selectByCutoff`. 
+
+We want to filter features having more than 50% of missing values, and we can do
+this by providing a list containing `cutoff` and `operator` as the `select.args` 
+argument in `?screen`.
+
+### 4. Run!
+Now let's select the features:
+
+```{r unsupervised_screening_via_screen_function}
+#Filter a feature if has more than 50% of missing values
+obj = screen(
+  x           = x,
+  g           = g,
+  method      = "missing.value",
+  multi       = "max",
+  select.by   = "cutoff",
+  select.args = list(cutoff = 0.5, operator = "<")
+)
+```
+
+We can check if the returned object is of class `featscreen`:
+
+```{r check_class_unsupervised_screening}
+#Is obj of class `featscreen`?
+is.featscreen(obj)
+```
+
+Now, we could print a summary:
+
+```{r print_featscreen_obj_unsupervised_screening}
+#Print
+print(x = obj, show.top = F)
+```
+
+
+## Next Steps
+Congratulations! You've successfully completed your first feature screening analysis. 
+
+As you continue to explore the package, refer to the documentation for detailed 
+information on each screening method and additional customization options.
+
+Start your **featscreen** journey today and unlock the full potential of efficient 
+and effective feature screening in R!

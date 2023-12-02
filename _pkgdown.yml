@@ -1,0 +1,101 @@
+url: ~
+template:
+  bootstrap: 5
+
+articles:
+- title: Screening
+  navbar: Screening
+  contents:
+  - supervised
+  - unsupervised
+reference:
+- title: Main Screening Function
+  desc: This function provides easy access and uniform syntax to the screening methodologies.
+  contents: screen
+- title: Featscreen Class
+  desc: Methods to handle objects of class `featscreen`
+  contents:
+  - featscreen
+  - is.featscreen
+  - print.featscreen
+  - getScreeningMethodId
+  - getMultiresponseAggregationMethodId
+  - getSelectionMethodId
+  - getSummary
+  - getFeatureDimensionality
+  - getFeatureNames
+  - getScreenedFeatures
+  - getFeatureRanks
+- title: Selection Functions
+  desc: These functions are used to determine which feature to keep
+  contents:
+  - selectByCutoff
+  - selectByRanking
+  - selectByPercentile
+  - selectByFpr
+  - selectByFdr
+- title: Supervised Biostatistical Functions
+  desc: These supervised functions are used to compute statistic and significance values used in the screening process.
+  contents:
+  - rowEBayesStatistics
+  - rowModeratedT
+  - rowModeratedOneWayAnova
+  - rowSamStatistics
+- title: Supervised Statistical Functions
+  desc: These statistical test functions are used to compute the statistic and significance values used in the screening process.
+  contents:
+  - rowCor
+  - rowPearsonCor
+  - rowSpearmanCor
+  - rowKendallCor
+  - rowTwoSampleT
+  - rowEqualVarT
+  - rowUnequalVarT
+  - rowPairedT
+  - rowTwoSampleWilcoxonT
+  - rowWilcoxonT
+  - rowPairedWilcoxonT
+  - rowOneWayAnova
+  - rowEqualVarOneWayAnova
+  - rowUnequalVarOneWayAnova
+  - rowKruskalWallis
+  - rowPearsonChiSq
+  - rowCoxPH
+- title: Unupervised Statistical Functions
+  desc: These unsupervised statistical functions are used to compute the statistic values used in the screening process.
+  contents:
+  - rowMissingValueRatio
+  - rowAboveMedianFreqRatio
+  - rowAboveMinFreqRatio
+  - rowMedians
+  - rowVariability
+  - sd
+  - rsd
+  - iqr
+  - mad
+  - snr
+  - vmr
+  - efficiency
+- title: Filter Functions
+  desc: Ready-to-use filter functions
+  contents:
+  - rowFilterByMissingValueRatio
+  - rowFilterByAboveMedianRatio
+  - rowFilterByAboveMinRatio
+  - rowFilterByMedianAboveMinExpr
+  - rowFilterByLowVariability
+- title: Utility Functions
+  contents:
+  - multiresponse
+  - defaultRanking
+  - listAvailableScreeningMethods
+  - listAvailableSelectionMethods
+  - listDefaultRankingOptions
+  - listAvailableScreeningFunctions
+  - listAvailableSelectionFunctions
+  - getStatFunction
+  - getSelectionFunction
+- title: Log Functions
+  contents:
+  - Logger
+  - getLogLine

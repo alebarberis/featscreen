@@ -1,0 +1,352 @@
+---
+title: "Unupervised screening methods"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Unupervised screening methods}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+Unsupervised feature screening empowers users to uncover hidden insights and identify influential features without relying on explicit target labels.
+
+Unsupervised methods operate on the inherent structure of the data, allowing for an unbiased examination of feature characteristics. By selectively retaining features that exhibit specific behaviors, unsupervised screening aids in reducing the dimensionality of datasets, facilitating more focused analyses.
+
+**featscreen** provides different methods catering to a range of scenarios, from handling missing values to exploring variability and ratios, providing flexibility in addressing diverse data challenges.
+
+In this article we explore the different unsupervised feature screening methods
+supported by **featscreen**.
+
+## Setup
+Firstly, we load `featscreen` and other needed packages:
+
+```{r setup}
+library(featscreen)
+```
+
+## Seed
+Now we want to set a seed for the random number generation (RNG). In fact, 
+different R sessions have different seeds created from current time and process 
+ID by default, and consequently different simulation results. By fixing a seed 
+we ensure we will be able to reproduce the results of this vignette. 
+We can specify a seed by calling `?set.seed`.
+
+
+```{r set_seed}
+#Set a seed for RNG
+set.seed(
+  #A seed
+  seed = 5381L,                   #a randomly chosen integer value
+  #The kind of RNG to use
+  kind = "Mersenne-Twister",      #we make explicit the current R default value
+  #The kind of Normal generation
+  normal.kind = "Inversion"       #we make explicit the current R default value
+)
+```
+
+## Screening Methods
+To view the list of currently supported supervised screening methods, use the 
+`?listAvailableScreeningMethods` function with the `x` parameter set to `unsupervised`:
+
+
+```{r list_unsupervised_screening_methods}
+#list screening methods
+screening.methods = listAvailableScreeningMethods(x = 'unsupervised')
+
+#print in table
+knitr::kable(x = screening.methods, align = 'rc')
+```
+
+
+## Missing-Value Ratio
+The missing-value-ratio method targets features based on the proportion of missing values they contain. This statistic allows users to set a threshold, filtering out features that surpass a specified percentage of missing data. By doing so, analysts can identify features that might lack sufficient information for meaningful analysis.
+
+To employ the missing-value ratio method in **featscreen**, the `?rowMissingValueRatio` function is utilized.
+
+```{r unsupervised_screening_missing_value_ratio}
+#Define row/col size
+nr = 5
+nc = 10
+
+#Data
+x = matrix(
+  data = sample(x = c(1,2), size = nr*nc, replace = TRUE),
+  nrow = nr,
+  ncol = nc,
+  dimnames = list(
+    paste0("f",seq(nr)),
+    paste0("S",seq(nc))
+  )
+)
+
+#Force 1st feature to have 40% of missing values
+x[1,seq(nc*0.4)] = NA
+
+#Compute
+rowMissingValueRatio(x = x)
+```
+
+
+We might be interested to know the missing value ratio per each group.
+
+```{r unsupervised_screening_missing_value_ratio_by_group}
+#Grouping variable
+g = c(rep("a", nc/2), rep("b", nc/2))
+
+#Compute
+rowMissingValueRatio(x = x, g = g)
+```
+
+`?rowFilterByMissingValueRatio` is a ready-to-use filter function.
+
+```{r unsupervised_screening_missing_value_ratio_by_group_function}
+#Grouping variable
+g = c(rep("a", nc/2), rep("b", nc/2))
+
+#Compute
+rowFilterByMissingValueRatio(
+  x = x, 
+  g = g,
+  # Maximum proportion of samples with missing values
+  max.prop = 0.5
+)
+```
+
+## Threshold-Based Selection
+Common unsupervised screening strategies are based on the feature values. These statistics allow users to set a threshold, filtering out features with values below the defined cutoff. 
+
+Typically applied to gene expression data, this rule is motivated by the notion that a gene must exhibit a minimal level of expression to be biologically relevant. A commonly used cut-off is the median expression of genes in a sample. Further refinement includes retaining features only if they surpass the threshold in a specified number of samples.
+
+### Above-Median Frequency Ratio
+This unsupervised screening approach can be instrumental in isolating features showcasing distinct behavior relative to the samples' central tendency.
+
+This technique allows users to define a threshold based on the median value, thereby retaining features with above-median characteristics.
+
+The above-median frequency ratio is computed in **featscreen** by calling the function `?rowAboveMedianFreqRatio`. 
+
+```{r unsupervised_screening_above_median_ratio}
+#Define row/col size
+nr = 5
+nc = 10
+
+#Data
+x = matrix(
+  data = sample.int(n = 100, size = nr*nc, replace = TRUE),
+  nrow = nr,
+  ncol = nc,
+  dimnames = list(
+    paste0("f",seq(nr)),
+    paste0("S",seq(nc))
+  )
+)
+
+#Compute
+rowAboveMedianFreqRatio(x = x)
+```
+
+
+We might be interested to know the above-median frequency ratio per each group.
+
+```{r unsupervised_screening_above_median_ratio_by_group}
+#Grouping variable
+g = c(rep("a", nc/2), rep("b", nc/2))
+
+#Compute
+rowAboveMedianFreqRatio(x = x, g = g)
+```
+
+
+`?rowFilterByAboveMedianRatio` is a ready-to-use filter function.
+
+```{r unsupervised_screening_above_median_ratio_by_group_function}
+#Grouping variable
+g = c(rep("a", nc/2), rep("b", nc/2))
+
+#Compute
+rowFilterByAboveMedianRatio(
+  x = x, 
+  g = g,
+  # Minimum proportion of samples where the feature expression is above the median
+  min.prop = 0.5
+)
+```
+
+
+### Above-Minimum Frequency Ratio
+The **above-minimum ratio** method focuses on features with values surpassing a defined minimum threshold. Users can set a minimum value, retaining features that exhibit behaviors above this specified limit. 
+
+The above-minimum frequency ratio is computed in **featscreen** by calling the function `?rowAboveMinFreqRatio`. 
+
+```{r unsupervised_screening_above_min_ratio}
+#Define row/col size
+nr = 5
+nc = 10
+
+#Data
+x = matrix(
+  data = sample.int(n = 100, size = nr*nc, replace = TRUE),
+  nrow = nr,
+  ncol = nc,
+  dimnames = list(
+    paste0("f",seq(nr)),
+    paste0("S",seq(nc))
+  )
+)
+
+#Compute
+rowAboveMinFreqRatio(x = x, min.expr = 20)
+```
+
+
+We might be interested to know the above-minimum frequency ratio per each group.
+
+```{r unsupervised_screening_above_min_ratio_by_group}
+#Grouping variable
+g = c(rep("a", nc/2), rep("b", nc/2))
+
+#Compute
+rowAboveMinFreqRatio(x = x, min.expr = 20, g = g)
+```
+
+
+
+`?rowFilterByAboveMinRatio` is a ready-to-use filter function.
+
+```{r unsupervised_screening_above_min_ratio_by_group_function}
+#Grouping variable
+g = c(rep("a", nc/2), rep("b", nc/2))
+
+#Compute
+rowFilterByAboveMinRatio(
+  x = x, 
+  g = g,
+  # Minimum expression required
+  min.expr = 60,
+  # Minimum proportion of samples where the feature expression is above the min
+  min.prop = 0.5
+)
+```
+
+
+### Median Values
+Commonly used in gene expression data, the median value is used as an indication of the level of expression. This is motivated by the notion that a gene must exhibit a minimal level of expression to be biologically relevant.
+
+
+The median values are computed in **featscreen** by calling the function `?rowMedians`. 
+
+```{r unsupervised_screening_median}
+#Define row/col size
+nr = 5
+nc = 10
+
+#Data
+x = matrix(
+  data = sample.int(n = 100, size = nr*nc, replace = TRUE),
+  nrow = nr,
+  ncol = nc,
+  dimnames = list(
+    paste0("f",seq(nr)),
+    paste0("S",seq(nc))
+  )
+)
+
+#Compute
+rowMedians(x = x)
+```
+
+
+We might be interested to know the median value per each group.
+
+```{r unsupervised_screening_median_by_group}
+#Grouping variable
+g = c(rep("a", nc/2), rep("b", nc/2))
+
+#Compute
+rowMedians(x = x, g = g)
+```
+
+
+`?rowFilterByMedianAboveMinExpr` is a ready-to-use filter function.
+
+```{r unsupervised_screening_median_above_min_by_group_function}
+#Grouping variable
+g = c(rep("a", nc/2), rep("b", nc/2))
+
+#Compute
+rowFilterByMedianAboveMinExpr(
+  x = x, 
+  g = g,
+  # Median minimum expression required
+  min.expr = 60
+)
+```
+
+## Variability-Based Selection
+Another commonly used unsupervised screening strategy is based on the feature variability, i.e., features showing higher variability across samples are prioritized. The rationale is that genes with substantial variability may capture interesting variations linked to experimental conditions (e.g., drug administration). Variability can be measured using standard deviation, interquartile range, or median absolute deviation.
+
+The above-minimum frequency ratio is computed in **featscreen** by calling the function `?rowVariability`. 
+
+Five measures of variability are available:
+
+* `sd`: The standard deviation.
+* `iqr`: The interquartile range.
+* `mad`: The median absolute deviation.
+* `rsd`: The relative standard deviation (i.e., coefficient of variation).
+* `efficiency`: The coefficient of variation squared.
+* `vmr`: The variance-to-mean ratio.
+
+We can provide the type of measure we want to use as the `method` argument in `?rowVariability`.
+
+```{r unsupervised_screening_variability}
+#Define row/col size
+nr = 5
+nc = 10
+
+#Data
+x = matrix(
+  data = sample.int(n = 100, size = nr*nc, replace = TRUE),
+  nrow = nr,
+  ncol = nc,
+  dimnames = list(
+    paste0("f",seq(nr)),
+    paste0("S",seq(nc))
+  )
+)
+
+#Compute
+rowVariability(x = x, method = 'sd')
+```
+
+We might be interested to know the variability per each group.
+
+```{r unsupervised_screening_variability_by_group}
+#Grouping variable
+g = c(rep("a", nc/2), rep("b", nc/2))
+
+#Compute
+rowVariability(x = x, method = 'sd', g = g)
+```
+
+
+`?rowFilterByLowVariability` is a ready-to-use filter function.
+
+```{r unsupervised_screening_variability_by_group_function}
+#Grouping variable
+g = c(rep("a", nc/2), rep("b", nc/2))
+
+#Compute
+rowFilterByLowVariability(
+  x = x, 
+  g = g, 
+  method = 'sd',
+  # Percentage of features with highest variability to keep
+  percentile = 0.25
+)
+```
